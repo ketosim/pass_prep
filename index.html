@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central Limit Theorem - Dice Demo</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-weight: bold;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(5px);
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .dice-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .die {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #333;
+            animation: roll 0.5s ease-in-out;
+        }
+        
+        @keyframes roll {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(90deg); }
+            50% { transform: rotate(180deg); }
+            75% { transform: rotate(270deg); }
+        }
+        
+        .current-roll {
+            text-align: center;
+            font-size: 1.5em;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+        
+        .explanation {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎲 Central Limit Theorem Demo</h1>
+        <p class="subtitle">Rolling 10 Dice, 1000 Times - Watch the Bell Curve Emerge!</p>
+        
+        <div class="controls">
+            <button onclick="rollOnce()">Roll 10 Dice Once</button>
+            <button onclick="rollMany()" id="rollManyBtn">Roll 1000 Times</button>
+            <button onclick="reset()">Reset Experiment</button>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <span class="stat-number" id="rollCount">0</span>
+                <span class="stat-label">Total Rolls Completed</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="currentSum">-</span>
+                <span class="stat-label">Current Roll Sum</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="avgSum">-</span>
+                <span class="stat-label">Average Sum</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">35</span>
+                <span class="stat-label">Expected Average</span>
+            </div>
+        </div>
+        
+        <div class="dice-container" id="diceContainer">
+            <!-- Dice will be populated here -->
+        </div>
+        
+        <div class="current-roll" id="currentRoll">
+            Click "Roll 10 Dice Once" to see individual dice values!
+        </div>
+        
+        <div class="chart-container">
+            <canvas id="histogram" width="800" height="400"></canvas>
+        </div>
+        
+        <div class="explanation">
+            <h3>🎯 What You're Seeing:</h3>
+            <p><strong>Individual Rolls:</strong> Each sum of 10 dice can range from 10 to 60, but you'll mostly see values between 25-45.</p>
+            <p><strong>The Magic:</strong> As you complete more rolls, the histogram above shows how the sums distribute. Even though each individual die roll is random, the pattern of sums becomes predictable!</p>
+            <p><strong>Expected Result:</strong> After 1000 rolls, you'll see a beautiful bell curve centered around 35 (3.5 × 10 dice). This is the Central Limit Theorem in action!</p>
+        </div>
+    </div>
+
+    <script>
+        let rollData = [];
+        let rollCount = 0;
+        let isRolling = false;
+        
+        const canvas = document.getElementById('histogram');
+        const ctx = canvas.getContext('2d');
+        
+        function createDice() {
+            const container = document.getElementById('diceContainer');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < 10; i++) {
+                const die = document.createElement('div');
+                die.className = 'die';
+                die.id = `die-${i}`;
+                die.textContent = '?';
+                container.appendChild(die);
+            }
+        }
+        
+        function rollSingleDie() {
+            return Math.floor(Math.random() * 6) + 1;
+        }
+        
+        function rollOnce() {
+            const diceValues = [];
+            let sum = 0;
+            
+            // Animate dice rolling
+            for (let i = 0; i < 10; i++) {
+                const die = document.getElementById(`die-${i}`);
+                die.style.animation = 'roll 0.5s ease-in-out';
+                
+                setTimeout(() => {
+                    const value = rollSingleDie();
+                    diceValues.push(value);
+                    sum += value;
+                    die.textContent = value;
+                    
+                    if (i === 9) {
+                        // All dice rolled
+                        rollData.push(sum);
+                        rollCount++;
+                        updateStats(sum);
+                        updateHistogram();
+                        
+                        document.getElementById('currentRoll').innerHTML = 
+                            `Roll #${rollCount}: Dice values: [${diceValues.join(', ')}] = <strong>${sum}</strong>`;
+                    }
+                }, 600);
+            }
+        }
+        
+        async function rollMany() {
+            if (isRolling) return;
+            
+            isRolling = true;
+            const btn = document.getElementById('rollManyBtn');
+            btn.disabled = true;
+            btn.textContent = 'Rolling...';
+            
+            const targetRolls = 1000;
+            const batchSize = 10;
+            
+            while (rollCount < targetRolls) {
+                // Roll a batch quickly
+                for (let i = 0; i < batchSize && rollCount < targetRolls; i++) {
+                    const sum = Array.from({length: 10}, () => rollSingleDie()).reduce((a, b) => a + b, 0);
+                    rollData.push(sum);
+                    rollCount++;
+                }
+                
+                // Update display
+                const lastSum = rollData[rollData.length - 1];
+                updateStats(lastSum);
+                updateHistogram();
+                
+                // Show progress
+                document.getElementById('currentRoll').innerHTML = 
+                    `Progress: ${rollCount}/${targetRolls} rolls completed. Latest sum: <strong>${lastSum}</strong>`;
+                
+                // Brief pause to show progress
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            
+            btn.disabled = false;
+            btn.textContent = 'Roll 1000 Times';
+            isRolling = false;
+            
+            document.getElementById('currentRoll').innerHTML = 
+                `🎉 Completed 1000 rolls! Notice how the histogram forms a bell curve centered around 35!`;
+        }
+        
+        function updateStats(currentSum) {
+            document.getElementById('rollCount').textContent = rollCount;
+            document.getElementById('currentSum').textContent = currentSum;
+            
+            if (rollData.length > 0) {
+                const avg = rollData.reduce((a, b) => a + b, 0) / rollData.length;
+                document.getElementById('avgSum').textContent = avg.toFixed(1);
+            }
+        }
+        
+        function updateHistogram() {
+            if (rollData.length === 0) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Create bins
+            const minSum = 10;
+            const maxSum = 60;
+            const binSize = 1;
+            const bins = {};
+            
+            // Initialize bins
+            for (let i = minSum; i <= maxSum; i++) {
+                bins[i] = 0;
+            }
+            
+            // Fill bins
+            rollData.forEach(sum => {
+                bins[sum] = (bins[sum] || 0) + 1;
+            });
+            
+            // Find max frequency for scaling
+            const maxFreq = Math.max(...Object.values(bins));
+            
+            // Draw histogram
+            const barWidth = canvas.width / (maxSum - minSum + 1);
+            const maxHeight = canvas.height - 60;
+            
+            // Draw bars
+            Object.entries(bins).forEach(([sum, freq]) => {
+                const x = (parseInt(sum) - minSum) * barWidth;
+                const height = (freq / maxFreq) * maxHeight;
+                const y = canvas.height - height - 30;
+                
+                // Color gradient based on distance from expected value (35)
+                const distance = Math.abs(parseInt(sum) - 35);
+                const intensity = Math.max(0, 1 - distance / 15);
+                const red = Math.floor(255 * (1 - intensity));
+                const green = Math.floor(255 * intensity);
+                
+                ctx.fillStyle = `rgb(${red}, ${green}, 100)`;
+                ctx.fillRect(x, y, barWidth - 1, height);
+                
+                // Draw frequency labels for significant bars
+                if (freq > maxFreq * 0.1) {
+                    ctx.fillStyle = '#333';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(freq.toString(), x + barWidth/2, y - 5);
+                }
+            });
+            
+            // Draw x-axis labels
+            ctx.fillStyle = '#333';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            
+            for (let i = minSum; i <= maxSum; i += 5) {
+                const x = (i - minSum) * barWidth + barWidth/2;
+                ctx.fillText(i.toString(), x, canvas.height - 5);
+            }
+            
+            // Draw expected value line
+            const expectedX = (35 - minSum) * barWidth + barWidth/2;
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(expectedX, 0);
+            ctx.lineTo(expectedX, canvas.height - 30);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Label expected value
+            ctx.fillStyle = '#ff0000';
+            ctx.font = 'bold 14px Arial';
+            ctx.fillText('Expected: 35', expectedX, 20);
+        }
+        
+        function reset() {
+            rollData = [];
+            rollCount = 0;
+            createDice();
+            updateStats(0);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('currentRoll').textContent = 'Click "Roll 10 Dice Once" to see individual dice values!';
+            document.getElementById('currentSum').textContent = '-';
+            document.getElementById('avgSum').textContent = '-';
+        }
+        
+        // Initialize
+        createDice();
+        updateHistogram();
+    </script>
+</body>
+</html>
