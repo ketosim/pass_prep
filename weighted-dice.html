@@ -245,15 +245,15 @@
             <h3>📊 Weighted Dice Probabilities (Unfair!)</h3>
             <p>Unlike fair dice, these are biased toward rolling 6s:</p>
             <div class="prob-grid">
-                <div class="prob-item">1: 8%</div>
-                <div class="prob-item">2: 8%</div>
-                <div class="prob-item">3: 8%</div>
-                <div class="prob-item">4: 8%</div>
-                <div class="prob-item">5: 8%</div>
-                <div class="prob-item">6: 60%</div>
+                <div class="prob-item">1: 10%</div>
+                <div class="prob-item">2: 10%</div>
+                <div class="prob-item">3: 10%</div>
+                <div class="prob-item">4: 10%</div>
+                <div class="prob-item">5: 10%</div>
+                <div class="prob-item">6: 50%</div>
             </div>
-            <p><strong>Expected value per die: 4.2</strong> (instead of 3.5 for fair dice)</p>
-            <p><strong>Expected sum of 10 dice: 42</strong> (instead of 35)</p>
+            <p><strong>Expected value per die: 4.5</strong> (instead of 3.5 for fair dice)</p>
+            <p><strong>Expected sum of 10 dice: 45</strong> (instead of 35)</p>
         </div>
         
         <div class="controls">
@@ -298,7 +298,7 @@
                 <span class="stat-label">Actual Average</span>
             </div>
             <div class="stat-card">
-                <span class="stat-number">42</span>
+                <span class="stat-number">45</span>
                 <span class="stat-label">Expected Average</span>
             </div>
         </div>
@@ -313,10 +313,10 @@
         
         <div class="explanation">
             <h3>🎯 The Amazing Result:</h3>
-            <p><strong>Individual Weighted Dice:</strong> Heavily biased toward 6 (60% chance!), creating a very skewed distribution.</p>
+            <p><strong>Individual Weighted Dice:</strong> Heavily biased toward 6 (50% chance!), creating a very skewed distribution.</p>
             <p><strong>The CLT Magic:</strong> Even though each die is unfair, when you sum 10 of them and repeat this 1000 times, the sums form a beautiful normal distribution!</p>
             <p><strong>Key Insight:</strong> The Central Limit Theorem works regardless of the original distribution shape - fair, unfair, skewed, or weird - it always creates normality from chaos!</p>
-            <p><strong>Notice:</strong> The bell curve is centered around 42 (not 35) because our weighted dice have a higher expected value, but it's still a perfect normal distribution!</p>
+            <p><strong>Notice:</strong> The bell curve is centered around 45 (not 35) because our weighted dice have a higher expected value, but it's still a perfect normal distribution!</p>
         </div>
     </div>
 
@@ -331,8 +331,11 @@
         const singleCanvas = document.getElementById('singleDieChart');
         const singleCtx = singleCanvas.getContext('2d');
         
-        // Weighted die probabilities (heavily favoring 6)
-        const dieWeights = [1, 1, 1, 1, 1, 7]; // 1-5 each have weight 1, 6 has weight 7
+        // Weighted die probabilities (moderately favoring 6)
+        // This gives: 1-5 = 10% each, 6 = 50% 
+        // Expected value: (1+2+3+4+5)*0.1 + 6*0.5 = 1.5 + 3.0 = 4.5 per die
+        // Expected sum of 10 dice: 45
+        const dieWeights = [1, 1, 1, 1, 1, 5]; // 1-5 each have weight 1, 6 has weight 5
         const totalWeight = dieWeights.reduce((a, b) => a + b, 0);
         
         function createDice() {
@@ -537,13 +540,14 @@
                 const height = (freq / maxFreq) * maxHeight;
                 const y = sumCanvas.height - height - 20;
                 
-                // Color gradient based on distance from expected value (42)
-                const distance = Math.abs(parseInt(sum) - 42);
-                const intensity = Math.max(0, 1 - distance / 15);
-                const red = Math.floor(255 * (1 - intensity));
-                const green = Math.floor(255 * intensity);
+                // Color gradient based on distance from expected value (45)
+                const distance = Math.abs(parseInt(sum) - 45);
+                const intensity = Math.max(0, 1 - distance / 12);
+                const red = Math.floor(255 * (1 - intensity * 0.8));
+                const green = Math.floor(200 * intensity);
+                const blue = Math.floor(150 + 50 * intensity);
                 
-                sumCtx.fillStyle = `rgb(${red}, ${green}, 150)`;
+                sumCtx.fillStyle = `rgb(${red}, ${green}, ${blue})`;
                 sumCtx.fillRect(x, y, barWidth - 1, height);
                 
                 // Draw frequency labels for significant bars
@@ -565,21 +569,24 @@
                 sumCtx.fillText(i.toString(), x, sumCanvas.height - 5);
             }
             
-            // Draw expected value line
-            const expectedX = (42 - minSum) * barWidth + barWidth/2;
-            sumCtx.strokeStyle = '#ff0000';
-            sumCtx.lineWidth = 2;
-            sumCtx.setLineDash([3, 3]);
-            sumCtx.beginPath();
-            sumCtx.moveTo(expectedX, 0);
-            sumCtx.lineTo(expectedX, sumCanvas.height - 20);
-            sumCtx.stroke();
-            sumCtx.setLineDash([]);
-            
-            // Label expected value
-            sumCtx.fillStyle = '#ff0000';
-            sumCtx.font = 'bold 12px Arial';
-            sumCtx.fillText('Expected: 42', expectedX, 15);
+            // Draw expected value line at 45
+            if (45 >= minSum && 45 <= maxSum) {
+                const expectedX = (45 - minSum) * barWidth + barWidth/2;
+                sumCtx.strokeStyle = '#ff0000';
+                sumCtx.lineWidth = 3;
+                sumCtx.setLineDash([5, 5]);
+                sumCtx.beginPath();
+                sumCtx.moveTo(expectedX, 0);
+                sumCtx.lineTo(expectedX, sumCanvas.height - 20);
+                sumCtx.stroke();
+                sumCtx.setLineDash([]);
+                
+                // Label expected value
+                sumCtx.fillStyle = '#ff0000';
+                sumCtx.font = 'bold 14px Arial';
+                sumCtx.textAlign = 'center';
+                sumCtx.fillText('Expected: 45', expectedX, 15);
+            }
         }
         
         function reset() {
